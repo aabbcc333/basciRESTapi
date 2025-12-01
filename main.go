@@ -89,11 +89,56 @@ func getBookById(id string) (*book, error) {
 
 	return nil, errors.New("book not found")
 }
-
+func bookExistById(id string) bool{
+	for _,b := range books{
+		if b.ID == id{
+			return true
+		}
+	}
+	return false
+}
+func bookExistByTitleAndAuthor(title string, author string) bool{
+	for _,b := range books{
+		if b.Title == title && b.Author == author{
+			return true
+		}
+	}
+	return false
+}
 func createBook(c *gin.Context) {
 	var newBook book
 
 	if err := c.BindJSON(&newBook); err != nil {
+		c.IndentedJSON(http.StatusBadRequest,gin.H{
+			"message":"invalid JSON payload",
+		})
+		return
+	}
+	if newBook.ID == ""||newBook.Author == ""||newBook.Title==""{
+		c.IndentedJSON(http.StatusBadRequest,gin.H{
+			"message":"all id, title and author are required",
+		})
+		return
+	}
+
+	if newBook.Quantity < 0{
+		c.IndentedJSON(http.StatusBadRequest, gin.H{
+			"message":"books quanity can't be negative",
+		})
+		return
+	}
+
+	if bookExistById(newBook.ID){
+		c.IndentedJSON(http.StatusConflict, gin.H{
+			"message":"book with this id already exist",
+		})
+		return
+	}
+
+	if bookExistByTitleAndAuthor(newBook.Title, newBook.Author){
+		c.IndentedJSON(http.StatusConflict, gin.H{
+			"message":"book with this same title and author already exist",
+		})
 		return
 	}
 
